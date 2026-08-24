@@ -18,7 +18,6 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true,
     lowercase: true,
-    // Email is optional for customers, mandatory for providers
     validate: {
       validator: function(v) {
         if (this.role === 'provider') {
@@ -48,9 +47,14 @@ const userSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  // Customer Specific Credentials
+  drivingLicenseNumber: {
+    type: String,
+    trim: true
+  },
   avatar: {
     type: String,
-    default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250'
+    default: ''
   },
   otp: {
     type: String

@@ -18,7 +18,7 @@ const sendOTP = async (req, res) => {
     }
 
     const demoOTP = '123456';
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
 
     const user = await User.findOne({ phone: phone.trim() });
     if (!user) {
@@ -77,7 +77,7 @@ const registerCustomer = async (req, res) => {
         phone: user.phone,
         email: user.email,
         role: user.role,
-        avatar: user.avatar
+        drivingLicenseNumber: user.drivingLicenseNumber
       }
     });
   } catch (error) {
@@ -100,7 +100,6 @@ const registerProvider = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide a valid 10-digit mobile number' });
     }
 
-    // Standard 15-character Indian GST Regex format (e.g. 22AAAAA0000A1Z5)
     const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
     const formattedGst = gstNumber.trim().toUpperCase();
     if (!gstRegex.test(formattedGst)) {
@@ -133,8 +132,7 @@ const registerProvider = async (req, res) => {
         email: user.email,
         role: user.role,
         shopName: user.shopName,
-        gstNumber: user.gstNumber,
-        avatar: user.avatar
+        gstNumber: user.gstNumber
       }
     });
   } catch (error) {
@@ -181,7 +179,7 @@ const loginUser = async (req, res) => {
           role: user.role,
           shopName: user.shopName,
           gstNumber: user.gstNumber,
-          avatar: user.avatar
+          drivingLicenseNumber: user.drivingLicenseNumber
         }
       });
     } else {
@@ -245,7 +243,7 @@ const getMe = async (req, res) => {
   }
 };
 
-// @desc    Update Profile
+// @desc    Update Profile (Name, Phone, Email, ShopName, GST, DrivingLicense)
 // @route   PUT /api/auth/profile
 // @access  Private
 const updateProfile = async (req, res) => {
@@ -253,14 +251,31 @@ const updateProfile = async (req, res) => {
     const user = await User.findById(req.user._id);
     if (!user) return res.status(404).json({ success: false, message: 'User not found' });
 
-    user.name = req.body.name || user.name;
-    user.phone = req.body.phone || user.phone;
-    if (req.body.shopName) user.shopName = req.body.shopName;
-    if (req.body.gstNumber) user.gstNumber = req.body.gstNumber;
+    if (req.body.name) user.name = req.body.name.trim();
+    if (req.body.phone) {
+      if (!/^[0-9]{10}$/.test(req.body.phone.trim())) {
+        return res.status(400).json({ success: false, message: 'Mobile number must be strictly 10 digits' });
+      }
+      user.phone = req.body.phone.trim();
+    }
+    if (req.body.email) user.email = req.body.email.trim().toLowerCase();
+    if (req.body.shopName) user.shopName = req.body.shopName.trim();
+    if (req.body.gstNumber) {
+      const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+      const formattedGst = req.body.gstNumber.trim().toUpperCase();
+      if (!gstRegex.test(formattedGst)) {
+        return res.status(400).json({ success: false, message: 'Invalid GST Number format (e.g. 22AAAAA0000A1Z5)' });
+      }
+      user.gstNumber = formattedGst;
+    }
+    if (req.body.drivingLicenseNumber) {
+      user.drivingLicenseNumber = req.body.drivingLicenseNumber.trim().toUpperCase();
+    }
 
     const updatedUser = await user.save();
     res.json({
       success: true,
+      message: 'Profile details updated successfully!',
       user: {
         _id: updatedUser._id,
         name: updatedUser.name,
@@ -269,7 +284,7 @@ const updateProfile = async (req, res) => {
         role: updatedUser.role,
         shopName: updatedUser.shopName,
         gstNumber: updatedUser.gstNumber,
-        avatar: updatedUser.avatar
+        drivingLicenseNumber: updatedUser.drivingLicenseNumber
       }
     });
   } catch (error) {
