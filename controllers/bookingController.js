@@ -1,5 +1,6 @@
 const Booking = require('../models/Booking');
 const Vehicle = require('../models/Vehicle');
+const { sendBookingSubmittedSMS, sendBookingApprovedSMS } = require('../services/smsService');
 
 // @desc    Create a new booking reservation (Customer)
 // @route   POST /api/bookings
@@ -75,6 +76,13 @@ const createBooking = async (req, res) => {
 
     const populatedBooking = await Booking.findById(booking._id).populate('vehicle');
 
+    // Trigger SMS to customer
+    if (req.user?.phone) {
+      sendBookingSubmittedSMS(req.user.phone, booking.bookingReference, vehicle.title).catch((err) =>
+        console.error('Booking submitted SMS err:', err)
+      );
+    }
+
     res.status(201).json({
       success: true,
       message: 'Booking submitted! Status: Waiting for Provider Approval',
@@ -147,6 +155,16 @@ const approveBooking = async (req, res) => {
     await Vehicle.findByIdAndUpdate(booking.vehicle, { status: 'Rented' });
 
     const updatedBooking = await Booking.findById(booking._id).populate('vehicle').populate('user');
+
+    // Trigger SMS with Pickup Verification Code to customer
+    if (updatedBooking.user?.phone) {
+      sendBookingApprovedSMS(
+        updatedBooking.user.phone,
+        booking.bookingReference,
+        updatedBooking.vehicle?.title || 'Vehicle',
+        verificationCode
+      ).catch((err) => console.error('Approval SMS err:', err));
+    }
 
     res.json({
       success: true,

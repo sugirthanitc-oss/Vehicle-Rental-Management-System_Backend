@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
+const { sendOtpSMS } = require('../services/smsService');
 
 const generateToken = (id) => {
   return jwt.sign({ id }, process.env.JWT_SECRET || 'drivepulse_rtcros_super_secret_jwt_key_2026_major_project', {
@@ -7,7 +8,7 @@ const generateToken = (id) => {
   });
 };
 
-// @desc    Send OTP to 10-digit mobile number for Password Reset / Verification (Demo OTP: 123456)
+// @desc    Send OTP to 10-digit mobile number for Real-Time Password Reset / Verification via TextBee SMS
 // @route   POST /api/auth/send-otp
 // @access  Public
 const sendOTP = async (req, res) => {
@@ -17,22 +18,27 @@ const sendOTP = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please enter a valid 10-digit mobile number' });
     }
 
-    const demoOTP = '123456';
-    const otpExpires = new Date(Date.now() + 10 * 60 * 1000);
-
-    const user = await User.findOne({ phone: phone.trim() });
+    const cleanPhone = phone.trim();
+    const user = await User.findOne({ phone: cleanPhone });
     if (!user) {
       return res.status(404).json({ success: false, message: 'No registered account found with this 10-digit mobile number' });
     }
 
-    user.otp = demoOTP;
+    // Generate dynamic cryptographically secure 6-digit OTP
+    const generatedOTP = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes expiry
+
+    user.otp = generatedOTP;
     user.otpExpires = otpExpires;
     await user.save();
 
+    // Trigger Real-time SMS Delivery via TextBee SMS Gateway
+    const smsResult = await sendOtpSMS(cleanPhone, generatedOTP);
+    console.log(`📱 Real-time OTP SMS dispatched to +91 ${cleanPhone}. Result:`, smsResult);
+
     res.json({
       success: true,
-      message: `Reset OTP sent to +91 ${phone}! (Demo OTP: 123456)`,
-      otpDemo: '123456'
+      message: `Verification OTP has been sent via SMS to +91 ${cleanPhone}. Please check your phone.`
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -162,7 +168,8 @@ const loginUser = async (req, res) => {
       return res.status(401).json({ success: false, message: 'No registered account found with this mobile number' });
     }
 
-    if (role && user.role !== role && user.role !== 'admin') {
+    const isCustomerRole = (r) => r === 'customer' || r === 'user';
+    if (role && user.role !== role && user.role !== 'admin' && !(isCustomerRole(role) && isCustomerRole(user.role))) {
       return res.status(403).json({ success: false, message: `This mobile number is registered as ${user.role}. Please select the correct login tab.` });
     }
 
@@ -205,13 +212,19 @@ const resetPassword = async (req, res) => {
       return res.status(400).json({ success: false, message: 'New password must be at least 6 characters long' });
     }
 
-    const user = await User.findOne({ phone: phone.trim() });
+    const cleanPhone = phone.trim();
+    const user = await User.findOne({ phone: cleanPhone });
     if (!user) {
       return res.status(404).json({ success: false, message: 'No registered account found with this 10-digit mobile number' });
     }
 
-    if (otp !== '123456' && user.otp !== otp) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired OTP code' });
+    // Strictly validate against dynamic OTP stored in DB & check expiration
+    if (!user.otp || user.otp !== otp.trim()) {
+      return res.status(400).json({ success: false, message: 'Invalid OTP code entered. Please enter the OTP sent to your phone.' });
+    }
+
+    if (user.otpExpires && user.otpExpires < new Date()) {
+      return res.status(400).json({ success: false, message: 'The OTP code has expired. Please request a new OTP.' });
     }
 
     user.password = newPassword;

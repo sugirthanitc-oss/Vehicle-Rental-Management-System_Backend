@@ -35,7 +35,7 @@ const userSchema = new mongoose.Schema({
   },
   role: {
     type: String,
-    enum: ['customer', 'provider', 'admin'],
+    enum: ['user', 'customer', 'provider', 'admin'],
     default: 'customer'
   },
   // Provider Specific Credentials

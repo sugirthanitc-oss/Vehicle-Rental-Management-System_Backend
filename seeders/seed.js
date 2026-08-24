@@ -235,8 +235,8 @@ const seedData = async () => {
     });
 
     console.log('🎉 Dual-Role Seed Completed Successfully!');
-    console.log('🔑 Customer Login Mobile: 9876543210 / Password: password123 (Demo OTP: 123456)');
-    console.log('🔑 Provider Login Mobile: 9123456789 / Password: password123 (Demo OTP: 123456)');
+    console.log('🔑 Customer Login Mobile: 9876543210 / Password: password123 (Real SMS OTP via TextBee)');
+    console.log('🔑 Provider Login Mobile: 9123456789 / Password: password123 (Real SMS OTP via TextBee)');
     process.exit(0);
   } catch (error) {
     console.error('❌ Seed error:', error);
