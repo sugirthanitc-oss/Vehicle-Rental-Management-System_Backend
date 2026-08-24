@@ -7,7 +7,7 @@ const generateToken = (id) => {
   });
 };
 
-// @desc    Send OTP to 10-digit mobile number (Demo OTP: 123456)
+// @desc    Send OTP to 10-digit mobile number for Password Reset / Verification (Demo OTP: 123456)
 // @route   POST /api/auth/send-otp
 // @access  Public
 const sendOTP = async (req, res) => {
@@ -20,63 +20,19 @@ const sendOTP = async (req, res) => {
     const demoOTP = '123456';
     const otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
 
-    // Update user record if exists
-    await User.findOneAndUpdate(
-      { phone: phone.trim() },
-      { otp: demoOTP, otpExpires },
-      { new: true, upsert: false }
-    );
-
-    res.json({
-      success: true,
-      message: `OTP sent successfully to +91 ${phone}! (Demo OTP: 123456)`,
-      otpDemo: '123456'
-    });
-  } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
-  }
-};
-
-// @desc    Login via 10-digit mobile number & OTP
-// @route   POST /api/auth/verify-otp-login
-// @access  Public
-const verifyOTPLogin = async (req, res) => {
-  try {
-    const { phone, otp, role } = req.body;
-
-    if (!phone || !otp) {
-      return res.status(400).json({ success: false, message: 'Please provide mobile number and OTP' });
-    }
-
     const user = await User.findOne({ phone: phone.trim() });
-
     if (!user) {
-      return res.status(404).json({ success: false, message: 'No account registered with this 10-digit mobile number' });
+      return res.status(404).json({ success: false, message: 'No registered account found with this 10-digit mobile number' });
     }
 
-    if (role && user.role !== role && user.role !== 'admin') {
-      return res.status(403).json({ success: false, message: `Account registered as ${user.role}. Please select correct login role.` });
-    }
+    user.otp = demoOTP;
+    user.otpExpires = otpExpires;
+    await user.save();
 
-    // Demo OTP check (123456)
-    if (otp !== '123456' && user.otp !== otp) {
-      return res.status(400).json({ success: false, message: 'Invalid or expired OTP. Use demo OTP: 123456' });
-    }
-
-    const token = generateToken(user._id);
     res.json({
       success: true,
-      token,
-      user: {
-        _id: user._id,
-        name: user.name,
-        phone: user.phone,
-        email: user.email,
-        role: user.role,
-        shopName: user.shopName,
-        gstNumber: user.gstNumber,
-        avatar: user.avatar
-      }
+      message: `Reset OTP sent to +91 ${phone}! (Demo OTP: 123456)`,
+      otpDemo: '123456'
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -129,7 +85,7 @@ const registerCustomer = async (req, res) => {
   }
 };
 
-// @desc    Register Vehicle Provider (Owner) Account
+// @desc    Register Vehicle Provider (Owner) Account with Strict GST & Email Validation
 // @route   POST /api/auth/register-provider
 // @access  Public
 const registerProvider = async (req, res) => {
@@ -144,6 +100,13 @@ const registerProvider = async (req, res) => {
       return res.status(400).json({ success: false, message: 'Please provide a valid 10-digit mobile number' });
     }
 
+    // Standard 15-character Indian GST Regex format (e.g. 22AAAAA0000A1Z5)
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/;
+    const formattedGst = gstNumber.trim().toUpperCase();
+    if (!gstRegex.test(formattedGst)) {
+      return res.status(400).json({ success: false, message: 'Invalid GST Registration Number format. Expected format e.g. 22AAAAA0000A1Z5' });
+    }
+
     const userExists = await User.findOne({ phone: phone.trim() });
     if (userExists) {
       return res.status(400).json({ success: false, message: 'Account with this mobile number already exists' });
@@ -154,7 +117,7 @@ const registerProvider = async (req, res) => {
       phone: phone.trim(),
       email: email.toLowerCase(),
       shopName,
-      gstNumber,
+      gstNumber: formattedGst,
       password,
       role: 'provider'
     });
@@ -179,17 +142,33 @@ const registerProvider = async (req, res) => {
   }
 };
 
-// @desc    Standard Password Login (Backup)
+// @desc    Direct Password Login for 10-digit Mobile Number
 // @route   POST /api/auth/login
 // @access  Public
 const loginUser = async (req, res) => {
   try {
-    const { phone, email, password } = req.body;
+    const { phone, password, role } = req.body;
 
-    const query = phone ? { phone: phone.trim() } : { email: email.toLowerCase() };
-    const user = await User.findOne(query);
+    if (!phone || !password) {
+      return res.status(400).json({ success: false, message: 'Please enter 10-digit mobile number and password' });
+    }
 
-    if (user && (await user.matchPassword(password))) {
+    const cleanPhone = phone.trim();
+    if (!/^[0-9]{10}$/.test(cleanPhone)) {
+      return res.status(400).json({ success: false, message: 'Please provide a valid 10-digit mobile number' });
+    }
+
+    const user = await User.findOne({ phone: cleanPhone });
+
+    if (!user) {
+      return res.status(401).json({ success: false, message: 'No registered account found with this mobile number' });
+    }
+
+    if (role && user.role !== role && user.role !== 'admin') {
+      return res.status(403).json({ success: false, message: `This mobile number is registered as ${user.role}. Please select the correct login tab.` });
+    }
+
+    if (await user.matchPassword(password)) {
       const token = generateToken(user._id);
       res.json({
         success: true,
@@ -206,30 +185,40 @@ const loginUser = async (req, res) => {
         }
       });
     } else {
-      res.status(401).json({ success: false, message: 'Invalid mobile number/email or password' });
+      res.status(401).json({ success: false, message: 'Invalid password provided' });
     }
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// @desc    Reset Password Recovery
+// @desc    Forgot Password OTP Verification & Reset
 // @route   POST /api/auth/reset-password
 // @access  Public
 const resetPassword = async (req, res) => {
   try {
-    const { phone, newPassword } = req.body;
+    const { phone, otp, newPassword } = req.body;
 
-    if (!phone || !newPassword) {
-      return res.status(400).json({ success: false, message: 'Please provide 10-digit mobile number and new password' });
+    if (!phone || !otp || !newPassword) {
+      return res.status(400).json({ success: false, message: 'Mobile number, OTP, and new password are required' });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ success: false, message: 'New password must be at least 6 characters long' });
     }
 
     const user = await User.findOne({ phone: phone.trim() });
     if (!user) {
-      return res.status(404).json({ success: false, message: 'No account registered with this 10-digit mobile number' });
+      return res.status(404).json({ success: false, message: 'No registered account found with this 10-digit mobile number' });
+    }
+
+    if (otp !== '123456' && user.otp !== otp) {
+      return res.status(400).json({ success: false, message: 'Invalid or expired OTP code' });
     }
 
     user.password = newPassword;
+    user.otp = undefined;
+    user.otpExpires = undefined;
     await user.save();
 
     res.json({
@@ -290,7 +279,6 @@ const updateProfile = async (req, res) => {
 
 module.exports = {
   sendOTP,
-  verifyOTPLogin,
   registerCustomer,
   registerProvider,
   loginUser,
