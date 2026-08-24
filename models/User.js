@@ -7,31 +7,62 @@ const userSchema = new mongoose.Schema({
     required: [true, 'Name is required'],
     trim: true
   },
+  phone: {
+    type: String,
+    required: [true, '10-digit Mobile Number is required'],
+    unique: true,
+    trim: true,
+    match: [/^[0-9]{10}$/, 'Please provide a valid 10-digit mobile number']
+  },
   email: {
     type: String,
-    required: [true, 'Email is required'],
-    unique: true,
-    lowercase: true,
     trim: true,
-    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please fill a valid email address']
+    lowercase: true,
+    // Email is optional for customers, mandatory for providers
+    validate: {
+      validator: function(v) {
+        if (this.role === 'provider') {
+          return !!v && /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v);
+        }
+        return !v || /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(v);
+      },
+      message: 'Providers must supply a valid email address'
+    }
   },
   password: {
     type: String,
     required: [true, 'Password is required'],
     minlength: 6
   },
-  phone: {
+  role: {
     type: String,
-    default: '+1 (555) 234-5678'
+    enum: ['customer', 'provider', 'admin'],
+    default: 'customer'
+  },
+  // Provider Specific Credentials
+  shopName: {
+    type: String,
+    trim: true
+  },
+  gstNumber: {
+    type: String,
+    trim: true
   },
   avatar: {
     type: String,
     default: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250'
   },
-  role: {
-    type: String,
-    enum: ['user', 'admin'],
-    default: 'user'
+  otp: {
+    type: String
+  },
+  otpExpires: {
+    type: Date
+  },
+  resetPasswordToken: {
+    type: String
+  },
+  resetPasswordExpires: {
+    type: Date
   },
   createdAt: {
     type: Date,
@@ -47,7 +78,7 @@ userSchema.pre('save', async function (next) {
   next();
 });
 
-// Method to compare entered password with hashed password
+// Method to compare entered password
 userSchema.methods.matchPassword = async function (enteredPassword) {
   return await bcrypt.compare(enteredPassword, this.password);
 };

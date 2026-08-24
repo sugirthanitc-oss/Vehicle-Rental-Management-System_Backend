@@ -6,10 +6,28 @@ const bookingSchema = new mongoose.Schema({
     ref: 'User',
     required: true
   },
+  provider: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
   vehicle: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Vehicle',
     required: true
+  },
+  // Customer License Verification
+  drivingLicenseNumber: {
+    type: String,
+    required: [true, 'Driving License Number is mandatory for booking']
+  },
+  // Location Distance Details
+  pickupLocation: {
+    type: String,
+    required: true // "From"
+  },
+  destinationLocation: {
+    type: String,
+    default: 'Local City Limit' // "To"
   },
   startDate: {
     type: Date,
@@ -43,27 +61,41 @@ const bookingSchema = new mongoose.Schema({
     type: Number,
     required: true
   },
-  status: {
+  // Flexible Payment Gateway
+  paymentType: {
     type: String,
-    enum: ['Confirmed', 'Active', 'Completed', 'Cancelled'],
-    default: 'Confirmed'
+    enum: ['Full', 'Split'],
+    default: 'Full'
   },
-  pickupLocation: {
-    type: String,
+  amountPaid: {
+    type: Number,
     required: true
+  },
+  remainingAmount: {
+    type: Number,
+    default: 0
   },
   paymentStatus: {
     type: String,
-    enum: ['Paid', 'Pending', 'Refunded'],
-    default: 'Paid'
+    enum: ['Fully Paid', 'Partial Paid', 'Refunded'],
+    default: 'Fully Paid'
   },
-  paymentMethod: {
+  // Provider Approval & Verification Code Workflow
+  approvalStatus: {
     type: String,
-    default: 'Credit Card (Visa ending 4242)'
+    enum: ['Waiting for Approval', 'Approved', 'Rejected', 'Completed', 'Cancelled'],
+    default: 'Waiting for Approval'
+  },
+  verificationCode: {
+    type: String // Pickup Code generated upon provider approval e.g. "PKUP-8921"
   },
   bookingReference: {
     type: String,
     unique: true
+  },
+  paymentMethod: {
+    type: String,
+    default: 'Credit Card / UPI Payment'
   },
   createdAt: {
     type: Date,

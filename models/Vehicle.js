@@ -12,8 +12,13 @@ const vehicleSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ['Electric', 'Luxury SUV', 'Sports Bike', 'Supercar', 'Sedan', 'Convertible'],
+    enum: ['EV', 'Electric', 'Luxury SUV', 'SUV', 'Sedan', 'Hatchback', 'Sports Bike', 'Supercar', 'Convertible'],
     required: true
+  },
+  vehicleType: {
+    type: String,
+    enum: ['EV', 'SUV', 'Sedan', 'Hatchback', 'Supercar', 'Sports Bike', 'Convertible'],
+    default: 'EV'
   },
   image: {
     type: String,
@@ -50,15 +55,42 @@ const vehicleSchema = new mongoose.Schema({
   },
   horsepower: {
     type: Number,
-    required: true
+    default: 300
   },
   zeroToSixty: {
     type: String,
-    default: '3.5s'
+    default: '4.0s'
   },
   topSpeed: {
     type: String,
-    default: '155 mph'
+    default: '150 mph'
+  },
+  // Provider Owner Link
+  provider: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'User'
+  },
+  // Vehicle Official Documentation (Full records stored privately)
+  engineNumber: {
+    type: String,
+    required: [true, 'Engine Number is required']
+  },
+  chassisNumber: {
+    type: String,
+    required: [true, 'Chassis Number is required']
+  },
+  rcBookNumber: {
+    type: String,
+    required: [true, 'RC Book Number is required']
+  },
+  odometerReading: {
+    type: Number,
+    default: 15000 // Kilometers driven
+  },
+  status: {
+    type: String,
+    enum: ['Available', 'Rented', 'Maintenance'],
+    default: 'Available'
   },
   rating: {
     type: Number,
@@ -66,29 +98,42 @@ const vehicleSchema = new mongoose.Schema({
   },
   reviewsCount: {
     type: Number,
-    default: 24
+    default: 18
   },
   isAvailable: {
     type: Boolean,
     default: true
   },
-  isFeatured: {
-    type: Boolean,
-    default: false
-  },
   features: [{
     type: String
   }],
-  host: {
-    name: { type: String, default: 'DrivePulse Premier Fleet' },
-    phone: { type: String, default: '+1 (800) 555-0199' },
-    avatar: { type: String, default: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200' },
-    rating: { type: Number, default: 4.95 }
-  },
   createdAt: {
     type: Date,
     default: Date.now
   }
 });
+
+// Security & Privacy Helper: Mask details to last 4 digits
+vehicleSchema.methods.toMaskedJSON = function () {
+  const obj = this.toObject();
+  
+  const mask = (str) => {
+    if (!str) return '••••••••';
+    const clean = str.trim();
+    if (clean.length <= 4) return clean;
+    return '••••••••' + clean.slice(-4);
+  };
+
+  obj.maskedEngineNumber = mask(obj.engineNumber);
+  obj.maskedChassisNumber = mask(obj.chassisNumber);
+  obj.maskedRcNumber = mask(obj.rcBookNumber);
+
+  // Remove full sensitive numbers from customer payloads
+  delete obj.engineNumber;
+  delete obj.chassisNumber;
+  delete obj.rcBookNumber;
+
+  return obj;
+};
 
 module.exports = mongoose.model('Vehicle', vehicleSchema);

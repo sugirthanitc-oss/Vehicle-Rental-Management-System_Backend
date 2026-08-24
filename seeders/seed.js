@@ -16,27 +16,42 @@ const seedData = async () => {
     await Vehicle.deleteMany();
     await Booking.deleteMany();
 
-    console.log('👤 Seeding default demo user account...');
-    const demoUser = await User.create({
-      name: 'Alex Vance Major',
-      email: 'user@drivepulse.com',
+    console.log('👤 Seeding default Provider (Owner) and Customer demo accounts...');
+
+    // Demo Provider Account
+    const providerUser = await User.create({
+      name: 'Apex Fleet Mobility (Provider Owner)',
+      phone: '9123456789',
+      email: 'provider@drivepulse.com',
       password: 'password123',
-      phone: '+1 (555) 890-2143',
-      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250',
-      role: 'user'
+      role: 'provider',
+      shopName: 'Apex Luxury Mobility Vault',
+      gstNumber: '22AAAAA0000A1Z5',
+      avatar: 'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&q=80&w=200'
     });
 
-    console.log('🚗 Seeding premium startup fleet database...');
+    // Demo Customer Account
+    const customerUser = await User.create({
+      name: 'Alex Vance Major (Customer)',
+      phone: '9876543210',
+      email: 'user@drivepulse.com',
+      password: 'password123',
+      role: 'customer',
+      avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=250'
+    });
+
+    console.log('🚗 Seeding vehicle fleet with Engine, Chassis, and RC Book numbers...');
     const vehiclesData = [
       {
+        provider: providerUser._id,
         title: 'Tesla Model S Plaid (2025)',
         brand: 'Tesla',
-        category: 'Electric',
+        category: 'EV',
+        vehicleType: 'EV',
         image: 'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&q=80&w=1000',
         gallery: [
           'https://images.unsplash.com/photo-1617788138017-80ad40651399?auto=format&fit=crop&q=80&w=1000',
-          'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&q=80&w=1000',
-          'https://images.unsplash.com/photo-1536700503339-1e4b06520771?auto=format&fit=crop&q=80&w=1000'
+          'https://images.unsplash.com/photo-1560958089-b8a1929cea89?auto=format&fit=crop&q=80&w=1000'
         ],
         dailyRate: 189,
         location: 'Downtown Silicon Hub, SF',
@@ -47,26 +62,25 @@ const seedData = async () => {
         horsepower: 1020,
         zeroToSixty: '1.99s',
         topSpeed: '200 mph',
+        engineNumber: 'ENG-98472918234',
+        chassisNumber: 'CHS-88392019482',
+        rcBookNumber: 'RC-77392019482',
+        odometerReading: 14500,
+        status: 'Available',
         rating: 4.98,
         reviewsCount: 42,
         isAvailable: true,
-        isFeatured: true,
-        features: ['Autopilot FSD', 'Tri-Motor AWD', 'Yoke Steering', '22-Speaker Audio', 'Gaming Rig Screen'],
-        host: {
-          name: 'HyperDrive Mobility',
-          phone: '+1 (415) 880-9911',
-          avatar: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&q=80&w=200',
-          rating: 4.99
-        }
+        features: ['Autopilot FSD', 'Tri-Motor AWD', 'Yoke Steering', '22-Speaker Audio']
       },
       {
+        provider: providerUser._id,
         title: 'Porsche 911 GT3 RS',
         brand: 'Porsche',
         category: 'Supercar',
+        vehicleType: 'Supercar',
         image: 'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&q=80&w=1000',
         gallery: [
-          'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&q=80&w=1000',
-          'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&q=80&w=1000'
+          'https://images.unsplash.com/photo-1614162692292-7ac56d7f7f1e?auto=format&fit=crop&q=80&w=1000'
         ],
         dailyRate: 349,
         location: 'Beverly Hills Boulevard, LA',
@@ -77,27 +91,23 @@ const seedData = async () => {
         horsepower: 518,
         zeroToSixty: '3.0s',
         topSpeed: '184 mph',
+        engineNumber: 'ENG-33418291048',
+        chassisNumber: 'CHS-44519283746',
+        rcBookNumber: 'RC-99812384756',
+        odometerReading: 8200,
+        status: 'Rented', // Out on rent for provider dashboard test
         rating: 4.99,
         reviewsCount: 38,
         isAvailable: true,
-        isFeatured: true,
-        features: ['DRS Active Aero', 'Carbon Ceramic Brakes', 'PDK 7-Speed', 'Weissach Package', 'Telemetry Logger'],
-        host: {
-          name: 'Apex Luxury Rentals',
-          phone: '+1 (310) 555-0128',
-          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
-          rating: 4.98
-        }
+        features: ['DRS Active Aero', 'Carbon Ceramic Brakes', 'PDK 7-Speed']
       },
       {
+        provider: providerUser._id,
         title: 'Range Rover Autobiography LWB',
         brand: 'Land Rover',
-        category: 'Luxury SUV',
+        category: 'SUV',
+        vehicleType: 'SUV',
         image: 'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&q=80&w=1000',
-        gallery: [
-          'https://images.unsplash.com/photo-1606664515524-ed2f786a0bd6?auto=format&fit=crop&q=80&w=1000',
-          'https://images.unsplash.com/photo-1549399542-7e3f8b79c341?auto=format&fit=crop&q=80&w=1000'
-        ],
         dailyRate: 249,
         location: 'Midtown Manhattan, NYC',
         city: 'New York',
@@ -107,27 +117,23 @@ const seedData = async () => {
         horsepower: 523,
         zeroToSixty: '4.4s',
         topSpeed: '155 mph',
+        engineNumber: 'ENG-55619283746',
+        chassisNumber: 'CHS-99812374615',
+        rcBookNumber: 'RC-11234985764',
+        odometerReading: 19800,
+        status: 'Available',
         rating: 4.95,
         reviewsCount: 29,
         isAvailable: true,
-        isFeatured: true,
-        features: ['Executive Class Rear Seats', 'Meridian Signature Sound', 'All-Wheel Steering', 'Air Suspension'],
-        host: {
-          name: 'Empire Prestige Cars',
-          phone: '+1 (212) 555-9011',
-          avatar: 'https://images.unsplash.com/photo-1570295999919-56ceb5ecca61?auto=format&fit=crop&q=80&w=200',
-          rating: 4.92
-        }
+        features: ['Executive Class Seats', 'Meridian Sound', 'All-Wheel Steering']
       },
       {
+        provider: providerUser._id,
         title: 'Ducati Panigale V4 S',
         brand: 'Ducati',
         category: 'Sports Bike',
+        vehicleType: 'Sports Bike',
         image: 'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&q=80&w=1000',
-        gallery: [
-          'https://images.unsplash.com/photo-1568772585407-9361f9bf3a87?auto=format&fit=crop&q=80&w=1000',
-          'https://images.unsplash.com/photo-1558981806-ec527fa84c39?auto=format&fit=crop&q=80&w=1000'
-        ],
         dailyRate: 145,
         location: 'Ocean Drive, Miami Beach',
         city: 'Miami',
@@ -137,26 +143,23 @@ const seedData = async () => {
         horsepower: 215,
         zeroToSixty: '2.7s',
         topSpeed: '186 mph',
+        engineNumber: 'ENG-77819238475',
+        chassisNumber: 'CHS-11239485764',
+        rcBookNumber: 'RC-33419283746',
+        odometerReading: 4500,
+        status: 'Available',
         rating: 4.97,
         reviewsCount: 19,
         isAvailable: true,
-        isFeatured: false,
-        features: ['Öhlins Electronic Suspension', 'Akrapovič Titanium Exhaust', 'Cornering ABS EVO', 'Quickshifter'],
-        host: {
-          name: 'Velocity Moto Vault',
-          phone: '+1 (305) 443-8090',
-          avatar: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&q=80&w=200',
-          rating: 5.0
-        }
+        features: ['Öhlins Suspension', 'Akrapovič Exhaust', 'Cornering ABS']
       },
       {
+        provider: providerUser._id,
         title: 'BMW M4 Competition xDrive',
         brand: 'BMW',
         category: 'Sedan',
+        vehicleType: 'Sedan',
         image: 'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&q=80&w=1000',
-        gallery: [
-          'https://images.unsplash.com/photo-1580273916550-e323be2ae537?auto=format&fit=crop&q=80&w=1000'
-        ],
         dailyRate: 175,
         location: 'Downtown Chicago, IL',
         city: 'Chicago',
@@ -166,129 +169,74 @@ const seedData = async () => {
         horsepower: 503,
         zeroToSixty: '3.4s',
         topSpeed: '180 mph',
+        engineNumber: 'ENG-88912384756',
+        chassisNumber: 'CHS-22319485764',
+        rcBookNumber: 'RC-55619283746',
+        odometerReading: 11200,
+        status: 'Available',
         rating: 4.92,
         reviewsCount: 31,
         isAvailable: true,
-        isFeatured: false,
-        features: ['M Carbon Bucket Seats', 'Harmon Kardon Audio', 'Heads-Up Display', 'M Drift Analyzer'],
-        host: {
-          name: 'Windy City Exotics',
-          phone: '+1 (312) 789-0123',
-          avatar: 'https://images.unsplash.com/photo-1522075469751-3a6694fb2f61?auto=format&fit=crop&q=80&w=200',
-          rating: 4.94
-        }
-      },
-      {
-        title: 'Lucid Air Sapphire Edition',
-        brand: 'Lucid',
-        category: 'Electric',
-        image: 'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&q=80&w=1000',
-        gallery: [
-          'https://images.unsplash.com/photo-1563720223185-11003d516935?auto=format&fit=crop&q=80&w=1000'
-        ],
-        dailyRate: 279,
-        location: 'Silicon Valley South, San Jose',
-        city: 'San Francisco',
-        transmission: 'Direct Drive',
-        seating: 5,
-        fuelType: 'Electric',
-        horsepower: 1234,
-        zeroToSixty: '1.89s',
-        topSpeed: '205 mph',
-        rating: 4.99,
-        reviewsCount: 15,
-        isAvailable: true,
-        isFeatured: true,
-        features: ['Torque Vectoring Tri-Motor', 'Massage Executive Seats', 'Glass Canopy Roof', '34-Inch Curved Display'],
-        host: {
-          name: 'Silicon EV Fleet',
-          phone: '+1 (408) 555-7722',
-          avatar: 'https://images.unsplash.com/photo-1492562080023-ab3db95bfbce?auto=format&fit=crop&q=80&w=200',
-          rating: 4.97
-        }
-      },
-      {
-        title: 'Mercedes-AMG G63 Edition 55',
-        brand: 'Mercedes-Benz',
-        category: 'Luxury SUV',
-        image: 'https://images.unsplash.com/photo-1520050206274-a1ae44613e6d?auto=format&fit=crop&q=80&w=1000',
-        gallery: [
-          'https://images.unsplash.com/photo-1520050206274-a1ae44613e6d?auto=format&fit=crop&q=80&w=1000'
-        ],
-        dailyRate: 310,
-        location: 'Beverly Hills, LA',
-        city: 'Los Angeles',
-        transmission: 'Automatic',
-        seating: 5,
-        fuelType: 'Petrol',
-        horsepower: 577,
-        zeroToSixty: '4.5s',
-        topSpeed: '149 mph',
-        rating: 4.96,
-        reviewsCount: 50,
-        isAvailable: true,
-        isFeatured: false,
-        features: ['Burmester 3D Surround', 'AMG Performance Exhaust', 'Designo Nappa Leather', '3 Lockable Differentials'],
-        host: {
-          name: 'Apex Luxury Rentals',
-          phone: '+1 (310) 555-0128',
-          avatar: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&q=80&w=200',
-          rating: 4.98
-        }
-      },
-      {
-        title: 'Ford Mustang Shelby GT500',
-        brand: 'Ford',
-        category: 'Convertible',
-        image: 'https://images.unsplash.com/photo-1584345604476-8ec5e12e42dd?auto=format&fit=crop&q=80&w=1000',
-        gallery: [
-          'https://images.unsplash.com/photo-1584345604476-8ec5e12e42dd?auto=format&fit=crop&q=80&w=1000'
-        ],
-        dailyRate: 159,
-        location: 'Downtown Austin, TX',
-        city: 'Austin',
-        transmission: 'Automatic',
-        seating: 4,
-        fuelType: 'Petrol',
-        horsepower: 760,
-        zeroToSixty: '3.3s',
-        topSpeed: '180 mph',
-        rating: 4.88,
-        reviewsCount: 22,
-        isAvailable: true,
-        isFeatured: false,
-        features: ['TREMEC 7-Speed Dual Clutch', 'Carbon Fiber Track Pack', 'Launch Control', 'Brembo Brakes'],
-        host: {
-          name: 'Lone Star Performance',
-          phone: '+1 (512) 890-4411',
-          avatar: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&q=80&w=200',
-          rating: 4.89
-        }
+        features: ['Carbon Bucket Seats', 'Harmon Kardon Audio', 'Heads-Up Display']
       }
     ];
 
     const seededVehicles = await Vehicle.insertMany(vehiclesData);
 
-    console.log('📌 Creating sample initial booking record for demo user...');
+    console.log('📌 Creating sample initial booking records with Split Payment & Approval states...');
+
+    // Booking 1: Approved with Pickup Verification Code and Split Payment
     await Booking.create({
-      user: demoUser._id,
-      vehicle: seededVehicles[0]._id,
-      startDate: new Date(Date.now() + 86400000 * 2), // 2 days from now
-      endDate: new Date(Date.now() + 86400000 * 5),   // 5 days from now
+      user: customerUser._id,
+      provider: providerUser._id,
+      vehicle: seededVehicles[1]._id, // Porsche 911 GT3 RS
+      drivingLicenseNumber: 'DL-984719283471',
+      pickupLocation: 'Beverly Hills Boulevard, LA',
+      destinationLocation: 'Malibu Coastline',
+      startDate: new Date(Date.now() + 86400000 * 1),
+      endDate: new Date(Date.now() + 86400000 * 4),
       totalDays: 3,
-      dailyRate: seededVehicles[0].dailyRate,
-      subtotal: seededVehicles[0].dailyRate * 3,
-      serviceFee: 45,
+      dailyRate: seededVehicles[1].dailyRate,
+      subtotal: seededVehicles[1].dailyRate * 3,
+      serviceFee: 84,
       insuranceFee: 75,
-      totalPrice: seededVehicles[0].dailyRate * 3 + 45 + 75,
-      pickupLocation: seededVehicles[0].location,
-      status: 'Confirmed',
-      paymentStatus: 'Paid',
-      paymentMethod: 'Credit Card (Visa ending 4242)'
+      totalPrice: seededVehicles[1].dailyRate * 3 + 84 + 75,
+      paymentType: 'Split',
+      amountPaid: Math.round((seededVehicles[1].dailyRate * 3 + 84 + 75) / 2),
+      remainingAmount: Math.round((seededVehicles[1].dailyRate * 3 + 84 + 75) / 2),
+      paymentStatus: 'Partial Paid',
+      approvalStatus: 'Approved',
+      verificationCode: 'PKUP-8921',
+      paymentMethod: 'Online Split Payment (50% Upfront)'
     });
 
-    console.log('🎉 Seed completed successfully!');
-    console.log('🔑 Demo User Login: user@drivepulse.com / password123');
+    // Booking 2: Waiting for Provider Approval
+    await Booking.create({
+      user: customerUser._id,
+      provider: providerUser._id,
+      vehicle: seededVehicles[0]._id, // Tesla Model S Plaid
+      drivingLicenseNumber: 'DL-984719283471',
+      pickupLocation: 'Downtown Silicon Hub, SF',
+      destinationLocation: 'Napa Valley Circuit',
+      startDate: new Date(Date.now() + 86400000 * 5),
+      endDate: new Date(Date.now() + 86400000 * 7),
+      totalDays: 2,
+      dailyRate: seededVehicles[0].dailyRate,
+      subtotal: seededVehicles[0].dailyRate * 2,
+      serviceFee: 30,
+      insuranceFee: 50,
+      totalPrice: seededVehicles[0].dailyRate * 2 + 30 + 50,
+      paymentType: 'Full',
+      amountPaid: seededVehicles[0].dailyRate * 2 + 30 + 50,
+      remainingAmount: 0,
+      paymentStatus: 'Fully Paid',
+      approvalStatus: 'Waiting for Approval',
+      paymentMethod: 'Full Payment Upfront'
+    });
+
+    console.log('🎉 Dual-Role Seed Completed Successfully!');
+    console.log('🔑 Customer Login Mobile: 9876543210 / Password: password123 (Demo OTP: 123456)');
+    console.log('🔑 Provider Login Mobile: 9123456789 / Password: password123 (Demo OTP: 123456)');
     process.exit(0);
   } catch (error) {
     console.error('❌ Seed error:', error);
